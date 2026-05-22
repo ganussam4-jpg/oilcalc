@@ -36,11 +36,17 @@ jobs:
 
       - name: Install Android cmdline-tools
         run: |
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/cmdline-tools
+          SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $SDK_ROOT/cmdline-tools
           cd /tmp
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip -q commandlinetools-linux-11076708_latest.zip
-          mv cmdline-tools $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          # Кладём cmdline-tools в новый путь (для sdkmanager)
+          mv cmdline-tools $SDK_ROOT/cmdline-tools/latest
+          # И ДУБЛИРУЕМ в старый путь tools/bin/, где их ищет buildozer 1.5.0
+          mkdir -p $SDK_ROOT/tools
+          cp -r $SDK_ROOT/cmdline-tools/latest/bin $SDK_ROOT/tools/bin
+          cp -r $SDK_ROOT/cmdline-tools/latest/lib $SDK_ROOT/tools/lib
 
       - name: Pre-accept Android SDK licenses
         run: |
