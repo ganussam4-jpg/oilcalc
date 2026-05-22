@@ -12,7 +12,10 @@ version = 1.0.0
 
 requirements = python3,kivy==2.3.0
 
-p4a.branch = 2024.01.21
+# Фиксируем стабильный p4a 2024.01.21 — последний релиз с Python 3.11.
+# Master содержит Python 3.14, под который Kivy 2.3.0 не собирается.
+p4a.branch = master
+p4a.commit = 2024.01.21
 
 orientation = portrait
 fullscreen = 0
