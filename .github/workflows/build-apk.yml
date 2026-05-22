@@ -1,19 +1,47 @@
-name: Build APK for Android (Docker)
+name: Build OILCALC APK
 
 on:
+  push:
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Build with Buildozer in Docker
+      - name: Fix permissions for Docker
+        run: |
+          sudo chown -R 1000:1000 .
+
+      - name: Build APK with official Kivy Docker image
         run: |
           docker run --rm \
             -v $(pwd):/home/user/app \
             -w /home/user/app \
+            -e BUILDOZER_WARN_ON_ROOT=0 \
             ghcr.io/kivy/buildozer:latest \
-            buildozer android debug
+            sh -c "yes | buildozer android debug"
+
+      - name: Fix permissions after Docker
+        if: always()
+        run: |
+          sudo chown -R $USER:$USER . || true
+
+      - name: Find APK
+        id: find_apk
+        run: |
+          APK_PATH=$(find bin -name "*.apk" 2>/dev/null | head -n 1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_PATH"
+
+      - name: Upload APK as artifact
+        if: steps.find_apk.outputs.apk_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilcalc-apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
+          retention-days: 30
