@@ -1,8 +1,5 @@
 name: Build OILCALC APK
 
-# Запуск:
-#  - автоматически при каждом push в main
-#  - вручную из вкладки Actions (кнопка "Run workflow")
 on:
   push:
     branches: [main, master]
@@ -11,30 +8,55 @@ on:
 jobs:
   build-android:
     name: Build APK for Android
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Кэш buildozer-global (SDK/NDK ~3-5 ГБ).
-      # Первая сборка займёт ~30-45 минут, повторные ~5-10 минут.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config \
+            zlib1g-dev libncurses-dev libncursesw5-dev libtinfo6 cmake libffi-dev \
+            libssl-dev build-essential libsqlite3-dev libbz2-dev liblzma-dev
+
+      - name: Install buildozer and cython
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install buildozer==1.5.0
+          pip install cython==3.0.11
+
       - name: Cache buildozer global directory
         uses: actions/cache@v4
         with:
-          path: .buildozer_global
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          path: ~/.buildozer
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-
 
       - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+        run: |
+          buildozer android debug
+
+      - name: Find APK
+        id: find_apk
+        run: |
+          APK_PATH=$(find bin -name "*.apk" | head -n 1)
+          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "Found APK: $APK_PATH"
 
       - name: Upload APK as artifact
         uses: actions/upload-artifact@v4
         with:
           name: oilcalc-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: ${{ steps.find_apk.outputs.apk_path }}
           retention-days: 30
