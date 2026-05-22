@@ -1,0 +1,40 @@
+name: Build OILCALC APK
+
+# Запуск:
+#  - автоматически при каждом push в main
+#  - вручную из вкладки Actions (кнопка "Run workflow")
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build APK for Android
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Кэш buildozer-global (SDK/NDK ~3-5 ГБ).
+      # Первая сборка займёт ~30-45 минут, повторные ~5-10 минут.
+      - name: Cache buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+
+      - name: Build APK with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: oilcalc-apk
+          path: ${{ steps.buildozer.outputs.filename }}
+          retention-days: 30
