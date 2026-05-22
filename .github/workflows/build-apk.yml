@@ -13,21 +13,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare workspace for Docker user
-        run: |
-          # создаём bin/ ДО смены владельца, иначе Permission denied
-          mkdir -p bin
-          # внутри образа kivy/buildozer пользователь user имеет UID=1000
-          sudo chown -R 1000:1000 .
-
       - name: Build APK inside official Kivy Docker image
         run: |
           docker run --rm \
-            --user 1000:1000 \
-            -v "${{ github.workspace }}:/home/user/app" \
-            -w /home/user/app \
+            -v "${{ github.workspace }}:/home/user/hostcwd" \
             ghcr.io/kivy/buildozer:latest \
-            buildozer android debug
+            android debug
 
       - name: Restore permissions
         if: always()
@@ -37,9 +28,10 @@ jobs:
       - name: Find APK
         id: find_apk
         run: |
-          APK_PATH=$(find bin -name "*.apk" 2>/dev/null | head -n 1)
+          APK_PATH=$(find . -name "*.apk" 2>/dev/null | head -n 1)
           if [ -z "$APK_PATH" ]; then
             echo "APK not found"
+            find . -name "*.apk" 2>/dev/null
             exit 1
           fi
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
