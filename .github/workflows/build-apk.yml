@@ -33,23 +33,13 @@ jobs:
           pip install buildozer==1.5.0
           pip install cython==3.0.11
 
-      - name: Install Android cmdline-tools
+      - name: Clear conflicting Android env vars
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          cd /tmp
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip
-          mv cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          # совместимость со старыми путями buildozer
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
-          cp -r ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/* ~/.buildozer/android/platform/android-sdk/tools/
-
-      - name: Accept Android SDK licenses
-        run: |
-          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33" || true
+          echo "ANDROID_HOME=" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=" >> $GITHUB_ENV
+          echo "ANDROID_NDK_LATEST_HOME=" >> $GITHUB_ENV
 
       - name: Cache buildozer global directory
         uses: actions/cache@v4
@@ -62,8 +52,6 @@ jobs:
       - name: Build APK with Buildozer
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
         run: |
           buildozer android debug
 
