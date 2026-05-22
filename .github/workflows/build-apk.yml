@@ -1,4 +1,4 @@
-name: Build APK for Android
+name: Build APK for Android (Docker)
 
 on:
   workflow_dispatch:
@@ -10,8 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
+      - name: Build with Buildozer in Docker
+        run: |
+          docker run --rm \
+            -v $(pwd):/home/user/app \
+            -w /home/user/app \
+            ghcr.io/kivy/buildozer:latest \
+            buildozer android debug
