@@ -13,33 +13,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Fix permissions for Docker
+      - name: Prepare workspace for Docker user
         run: |
+          # внутри образа kivy/buildozer пользователь user имеет UID=1000
           sudo chown -R 1000:1000 .
+          mkdir -p bin
+          sudo chown 1000:1000 bin
 
-      - name: Build APK with official Kivy Docker image
+      - name: Build APK inside official Kivy Docker image
         run: |
           docker run --rm \
-            -v $(pwd):/home/user/app \
+            --user 1000:1000 \
+            -v "${{ github.workspace }}:/home/user/app" \
             -w /home/user/app \
-            -e BUILDOZER_WARN_ON_ROOT=0 \
             ghcr.io/kivy/buildozer:latest \
-            sh -c "yes | buildozer android debug"
+            buildozer android debug
 
-      - name: Fix permissions after Docker
+      - name: Restore permissions
         if: always()
         run: |
-          sudo chown -R $USER:$USER . || true
+          sudo chown -R $(id -u):$(id -g) . || true
 
       - name: Find APK
         id: find_apk
         run: |
           APK_PATH=$(find bin -name "*.apk" 2>/dev/null | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "APK not found"
+            exit 1
+          fi
           echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
           echo "Found APK: $APK_PATH"
 
       - name: Upload APK as artifact
-        if: steps.find_apk.outputs.apk_path != ''
         uses: actions/upload-artifact@v4
         with:
           name: oilcalc-apk
