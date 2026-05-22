@@ -2,8 +2,6 @@ name: Build APK for Android
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
 
 jobs:
   build:
@@ -17,7 +15,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config \
@@ -28,15 +26,11 @@ jobs:
           pip install --upgrade pip
           pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Setup Android SDK Properly
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: 17.0
-
-      - name: Accept Licenses
+      - name: Prepare Android SDK Licenses
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "build-tools;37.0.0" "platform-tools"
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
+          echo "8933bad161af4178b1185d1a37fcb7a0" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
 
       - name: Build APK
         run: buildozer -v android debug
