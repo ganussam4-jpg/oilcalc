@@ -15,10 +15,10 @@ jobs:
 
       - name: Prepare workspace for Docker user
         run: |
+          # создаём bin/ ДО смены владельца, иначе Permission denied
+          mkdir -p bin
           # внутри образа kivy/buildozer пользователь user имеет UID=1000
           sudo chown -R 1000:1000 .
-          mkdir -p bin
-          sudo chown 1000:1000 bin
 
       - name: Build APK inside official Kivy Docker image
         run: |
