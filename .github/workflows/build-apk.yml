@@ -33,6 +33,24 @@ jobs:
           pip install buildozer==1.5.0
           pip install cython==3.0.11
 
+      - name: Install Android cmdline-tools
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          # совместимость со старыми путями buildozer
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
+          cp -r ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/* ~/.buildozer/android/platform/android-sdk/tools/
+
+      - name: Accept Android SDK licenses
+        run: |
+          export ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;33.0.2" "platforms;android-33" || true
+
       - name: Cache buildozer global directory
         uses: actions/cache@v4
         with:
@@ -41,18 +59,13 @@ jobs:
           restore-keys: |
             buildozer-
 
-      - name: Pre-accept Android SDK licenses
-        run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          echo -e "\n504667f4c0de7af1a06de9f4b1727b84351f2910" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-arm-dbt-license
-
       - name: Build APK with Buildozer
         env:
           JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
         run: |
-          yes | buildozer android debug
+          buildozer android debug
 
       - name: Find APK
         id: find_apk
