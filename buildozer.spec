@@ -25,7 +25,7 @@ android.minapi = 21
 android.build_tools_version = 33.0.2
 
 # Стабильный NDK для Kivy 2.3
-android.ndk = 25b
+# android.ndk = 25b
 
 # КЛЮЧЕВОЕ: автоматически принимать ВСЕ лицензии SDK
 android.accept_sdk_license = True
