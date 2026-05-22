@@ -23,7 +23,6 @@ android.minapi = 21
 
 # Стабильная связка NDK + p4a для Kivy 2.3.0
 android.ndk = 25b
-android.sdk = 33
 android.accept_sdk_license = True
 
 # Архитектуры
